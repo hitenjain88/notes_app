@@ -9,6 +9,20 @@ class NotesEditor extends StatefulWidget {
 
 class NotesEditorState extends State<NotesEditor> {
   Color backColor = Color(0xFF000000);
+  List<Color> backColorList = [
+    Colors.black,
+    Colors.red,
+    Colors.orange,
+    Colors.yellow,
+    Colors.green,
+    Colors.teal,
+    Colors.blue,
+    Color(0xff00008b),
+    Colors.purple,
+    Colors.pink,
+    Colors.brown,
+    Colors.grey
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -21,14 +35,22 @@ class NotesEditorState extends State<NotesEditor> {
           height: 40.0,
           width: MediaQuery.of(context).size.width,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
+              IconButton(
+                icon: Icon(Icons.add_box),
+                color: Colors.white,
+                onPressed: () {
+                  showBottomPopupLeft(context);
+                },
+                iconSize: 20.0,
+              ),
               IconButton(
                 icon: Icon(Icons.more_vert),
                 color: Colors.white,
                 onPressed: () {
-                  showBottomPopup();
+                  showBottomPopupRight(context);
                 },
-                alignment: Alignment.centerRight,
                 iconSize: 20.0,
               )
             ],
@@ -68,12 +90,6 @@ class NotesEditorState extends State<NotesEditor> {
                       borderSide: BorderSide(color: backColor))),
             ),
           ),
-//          Divider(
-//            endIndent: 100.0,
-//            indent: 100.0,
-//            color: Color(0xFFe25822),
-//            height: 0,
-//          ),
           Expanded(
             child: Container(
               margin: EdgeInsets.only(left: 10.0, right: 10.0),
@@ -105,7 +121,7 @@ class NotesEditorState extends State<NotesEditor> {
     );
   }
 
-  void showBottomPopup() {
+  void showBottomPopupRight(context) {
     showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
@@ -120,30 +136,141 @@ class NotesEditorState extends State<NotesEditor> {
                       'Delete',
                       style: TextStyle(color: Colors.white),
                     ),
-                    leading: Icon(Icons.delete,color: Colors.white,),
+                    leading: Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                    ),
                   ),
                   ListTile(
-                    title: Text('Make a copy',
-                      style: TextStyle(color: Colors.white),),
-                    leading: Icon(Icons.content_copy,color: Colors.white,),
+                    title: Text(
+                      'Make a copy',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    leading: Icon(
+                      Icons.content_copy,
+                      color: Colors.white,
+                    ),
                   ),
                   ListTile(
-                    title: Text('Send',
-                      style: TextStyle(color: Colors.white),),
-                    leading: Icon(Icons.share,color: Colors.white,),
+                    title: Text(
+                      'Send',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    leading: Icon(
+                      Icons.share,
+                      color: Colors.white,
+                    ),
                   ),
                   ListTile(
-                    title: Text('Collaborator',
-                      style: TextStyle(color: Colors.white),),
-                    leading: Icon(Icons.person_add,color: Colors.white,),
+                    title: Text(
+                      'Collaborator',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    leading: Icon(
+                      Icons.person_add,
+                      color: Colors.white,
+                    ),
                   ),
                   ListTile(
-                    title: Text('Label',
-                      style: TextStyle(color: Colors.white),),
-                    leading: Icon(Icons.label,color: Colors.white,),
+                    title: Text(
+                      'Label',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    leading: Icon(
+                      Icons.label,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Container(
+                    height: 40.0,
+                    child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: backColorList.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                backColor = backColorList[index];
+                              });
+                              Navigator.pop(context);
+                              showBottomPopupRight(context);
+                            },
+                            child: Container(
+                              margin: EdgeInsets.only(left: 10.0, right: 10.0),
+                              height: 40.0,
+                              width: 40.0,
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: backColorList[index]),
+                            ),
+                          );
+                        }),
                   )
                 ],
               ));
+        });
+  }
+
+  void showBottomPopupLeft(context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+              color: backColor,
+              height: MediaQuery.of(context).size.height * 0.35,
+              width: MediaQuery.of(context).size.width,
+              child: ListView(children: <Widget>[
+                ListTile(
+                  title: Text(
+                    'Take photo',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  leading: Icon(
+                    Icons.photo_camera,
+                    color: Colors.white,
+                  ),
+                ),
+                ListTile(
+                  title: Text(
+                    'Choose image',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  leading: Icon(
+                    Icons.image,
+                    color: Colors.white,
+                  ),
+                ),
+                ListTile(
+                  title: Text(
+                    'Drawing',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  leading: Icon(
+                    Icons.brush,
+                    color: Colors.white,
+                  ),
+                ),
+                ListTile(
+                  title: Text(
+                    'Recording',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  leading: Icon(
+                    Icons.mic,
+                    color: Colors.white,
+                  ),
+                ),
+                ListTile(
+                  title: Text(
+                    'Tick boxes',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  leading: Icon(
+                    Icons.check_box,
+                    color: Colors.white,
+                  ),
+                )
+              ]));
         });
   }
 }
