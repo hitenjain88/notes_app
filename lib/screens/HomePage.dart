@@ -80,7 +80,7 @@ class HomePageState extends State<HomePage> {
 //
 //  Future weather() async {
 //    http.Response res = await http.get(
-//        'http://api.openweathermap.org/data/2.5/weather?zip=121006,in&appid=8eef57813fa055dcfbe6d722787a1ad7');
+//        'http://api.openweathermap.org/data/2.5/weather?zip=121006,in&appid=');
 //    var data=json.decode(res.body);
 //    print(data['main']['temp']);
 //  }
