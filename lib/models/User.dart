@@ -1,5 +1,5 @@
 class User {
-  String longitude, latitude;
+  double longitude, latitude;
 
   User({this.latitude,this.longitude});
 }
