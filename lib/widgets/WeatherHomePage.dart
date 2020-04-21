@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:location/location.dart';
 import 'package:notesapp/models/User.dart';
 import 'package:http/http.dart' as http;
@@ -40,7 +41,8 @@ class WeatherHomePageState extends State<WeatherHomePage> {
   Widget build(BuildContext context) {
     return Container(
         width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height * 0.2,
+        height: MediaQuery.of(context).size.height * 0.3,
+        padding: EdgeInsets.all(10.0),
         margin: EdgeInsets.all(10.0),
         decoration: BoxDecoration(
             color: Colors.white,
@@ -64,9 +66,7 @@ class WeatherHomePageState extends State<WeatherHomePage> {
                 children: <Widget>[
                   Expanded(
                     child: (user.longitude == -1.0 || user.latitude == -1.0)
-                        ? Center(
-                            child: Text(
-                                "There's no previous location for weather"))
+                        ? Center(child: Text("There's no previous for weather"))
                         : weatherWidget,
                   ),
                   Row(
@@ -337,9 +337,10 @@ class WeatherHomePageState extends State<WeatherHomePage> {
         if (snapshot.hasData &&
             snapshot.connectionState == ConnectionState.done) {
           weatherStatus = snapshot.data;
+          print(weatherStatus);
           return Center(
             child: Text(
-                'Current Temperature is ${weatherStatus['main']['temp'] - 273}\u1d52C'),
+                'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
           );
         }
         return Container(
@@ -354,15 +355,19 @@ class WeatherHomePageState extends State<WeatherHomePage> {
   }
 
   Future getWeatherPincode(pincode, countryCode) async {
+    Map weatherStatus = {};
     var dataString =
         await DefaultAssetBundle.of(context).loadString('assets/data.json');
     var dataJson = json.decode(dataString.toString());
     String url =
         'http://api.openweathermap.org/data/2.5/weather?zip=$pincode,$countryCode&appid=${dataJson["weatherApiKey"]}';
-    print(url);
     http.Response res = await http.get(url);
     var weather = json.decode(res.body);
-    return weather;
+    print(weather);
+    weatherStatus['weather'] = weather;
+    print(weatherStatus);
+    weatherData.writeFile(weatherStatus);
+    return weatherStatus;
   }
 
   Widget WeatherCityName() {
@@ -373,9 +378,11 @@ class WeatherHomePageState extends State<WeatherHomePage> {
         if (snapshot.hasData &&
             snapshot.connectionState == ConnectionState.done) {
           weatherStatus = snapshot.data;
+          print(1);
+          print(weatherStatus['weather']);
           return Center(
             child: Text(
-                'Current Temperature is ${weatherStatus['main']['temp'] - 273}\u1d52C'),
+                'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
           );
         }
         return Container(
@@ -390,6 +397,8 @@ class WeatherHomePageState extends State<WeatherHomePage> {
   }
 
   Future getWeatherCityName(cityName) async {
+    print(1);
+    Map weatherStatus = {};
     var dataString =
         await DefaultAssetBundle.of(context).loadString('assets/data.json');
     var dataJson = json.decode(dataString.toString());
@@ -397,7 +406,9 @@ class WeatherHomePageState extends State<WeatherHomePage> {
         'http://api.openweathermap.org/data/2.5/weather?q=$cityName&appid=${dataJson["weatherApiKey"]}';
     http.Response res = await http.get(url);
     var weather = json.decode(res.body);
-    return weather;
+    weatherStatus['weather'] = weather;
+    weatherData.writeFile(weatherStatus);
+    return weatherStatus;
   }
 
   Widget WeatherOldLocation() {
@@ -405,11 +416,15 @@ class WeatherHomePageState extends State<WeatherHomePage> {
     return FutureBuilder(
       future: weatherData.readFile(),
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
+        if (snapshot.hasData &&
+            snapshot.connectionState == ConnectionState.done) {
           previousWeather = jsonDecode(snapshot.data);
+//          print(previousWeather);
+//          print(previousWeather.runtimeType);
+//          print(previousWeather['weather']);
           return Center(
               child: Text(
-                  'Previous Temperature is ${previousWeather['main']['temp'] - 273}\u1d52C'));
+                  'Previous Temperature is ${previousWeather['weather']['main']['temp'] - 273}\u1d52C'));
         }
         return Container(
           height: MediaQuery.of(context).size.width * 0.1,
@@ -432,10 +447,39 @@ class WeatherHomePageState extends State<WeatherHomePage> {
           weatherStatus = snapshot.data;
           if (weatherStatus['permissionStatus']) {
             if (weatherStatus['locationStatus']) {
-              return Center(
-                child: Text(
-                    'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
-              );
+              return Column(children: <Widget>[
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                      'Last Updated: ${weatherStatus['lastUpdated']['date']}, ${weatherStatus['lastUpdated']['time']}'),
+                ),
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('${weatherStatus['weather']['name']}')),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                      'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    Column(
+                      children: <Widget>[
+                        Text('Min. Temp: ${weatherStatus['weather']['main']['temp_min']}'),
+                        Text('Max. Temp: ${weatherStatus['weather']['main']['temp_max']}'),
+                      ],
+                    ),
+                    Column(
+                      children: <Widget>[
+                        Text('Pressure: ${weatherStatus['weather']['main']['pressure']}'),
+                        Text('Humidity: ${weatherStatus['weather']['main']['humidity']}'),
+                        Text('Wind: ${weatherStatus['weather']['wind']['speed']}'),
+                      ],
+                    )
+                  ],
+                )
+              ]);
             } else {
               return Center(child: Text('location is off'));
             }
@@ -475,12 +519,14 @@ class WeatherHomePageState extends State<WeatherHomePage> {
         locationData = await location.getLocation();
         weatherDetails = await getWeatherCurrent(
             locationData.latitude, locationData.longitude);
-        weatherData.writeFile(weatherDetails);
         response.update({
           'latitude': locationData.latitude,
           'longitude': locationData.longitude
         });
         weatherStatus['weather'] = weatherDetails;
+        var dateTime = getCurrentTime();
+        weatherStatus['lastUpdated'] = dateTime;
+        weatherData.writeFile(weatherStatus);
       }
     }
     return weatherStatus;
@@ -495,5 +541,15 @@ class WeatherHomePageState extends State<WeatherHomePage> {
     http.Response res1 = await http.get(url);
     var weather = json.decode(res1.body);
     return weather;
+  }
+
+  getCurrentTime() {
+    Map dateTime = {};
+    var currentTime = DateTime.now();
+    String date = DateFormat.yMMMEd().format(currentTime);
+    String time = DateFormat.jm().format(currentTime);
+    dateTime['date'] = date;
+    dateTime['time'] = time;
+    return dateTime;
   }
 }

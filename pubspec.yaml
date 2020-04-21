@@ -23,7 +23,7 @@ dependencies:
   #geolocator: ^5.3.1
   location: ^3.0.0
   permission_handler: ^5.0.0+hotfix.3
-  #simple_permissions: ^0.1.9
+  intl: ^0.16.1
   path_provider: ^1.6.5
   firebase_core: ^0.4.0+9
   firebase_database: ^3.1.3
