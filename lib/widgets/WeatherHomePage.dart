@@ -53,72 +53,93 @@ class WeatherHomePageState extends State<WeatherHomePage> {
                   color: Colors.black87,
                   blurRadius: 5.0)
             ]),
-        child: FutureBuilder(
-          future: response.once(),
-          builder: (context, AsyncSnapshot<DataSnapshot> snapshot) {
-            if (snapshot.hasData) {
-              Map<dynamic, dynamic> values = snapshot.data.value;
-              if (values != null) {
-                user.longitude = values['longitude'].toDouble();
-                user.latitude = values['latitude'].toDouble();
-              }
-              return Column(
-                children: <Widget>[
-                  Expanded(
-                    child: (user.longitude == -1.0 || user.latitude == -1.0)
-                        ? Center(child: Text("There's no previous for weather"))
-                        : weatherWidget,
+        child: Column(
+          children: <Widget>[
+            Expanded(child: weatherWidget),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: RaisedButton(
+                    onPressed: () {
+                      setState(() {
+                        weatherWidget = WeatherCurrentLocation();
+                      });
+                    },
+                    child: Text('Location'),
                   ),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: RaisedButton(
-                          onPressed: () {
-                            setState(() {
-                              weatherWidget = WeatherCurrentLocation();
-                            });
-                          },
-                          child: Text('Location'),
-                        ),
-                      ),
-                      Expanded(
-                        child: RaisedButton(
-                          onPressed: () {
-                            pinCodeController.text = '';
-                            countryCodeController.text = '';
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertPincode();
-                                });
-                          },
-                          child: Text('Pincode/Postal-Code'),
-                        ),
-                      ),
-                      Expanded(
-                        child: RaisedButton(
-                          onPressed: () {
-                            cityNameController.text = '';
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertCity();
-                                });
-                          },
-                          child: Text('City Name'),
-                        ),
-                      )
-                    ],
-                  )
-                ],
-              );
-            }
-            return Container(
-                height: MediaQuery.of(context).size.width * 0.1,
-                width: MediaQuery.of(context).size.width * 0.1,
-                child: Center(child: CircularProgressIndicator()));
-          },
+                ),
+                Expanded(
+                  child: RaisedButton(
+                    onPressed: () {
+                      pinCodeController.text = '';
+                      countryCodeController.text = '';
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertPincode();
+                          });
+                    },
+                    child: Text('Pincode/Postal-Code'),
+                  ),
+                ),
+                Expanded(
+                  child: RaisedButton(
+                    onPressed: () {
+                      cityNameController.text = '';
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertCity();
+                          });
+                    },
+                    child: Text('City Name'),
+                  ),
+                )
+              ],
+            )
+          ],
         ));
+  }
+
+  Widget displayWeather(weatherStatus) {
+    return Column(children: <Widget>[
+      Align(
+        alignment: Alignment.centerRight,
+        child: Text(
+            'Last Updated: ${weatherStatus['lastUpdated']['date']}, ${weatherStatus['lastUpdated']['time']}'),
+      ),
+      Align(
+          alignment: Alignment.centerLeft,
+          child: Text('${weatherStatus['weather']['name']}')),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+            'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
+      ),
+      Align(
+          alignment: Alignment.centerLeft,
+          child: Text('${weatherStatus['weather']['weather'][0]['main']}')),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: <Widget>[
+          Column(
+            children: <Widget>[
+              Text(
+                  'Min. Temp: ${weatherStatus['weather']['main']['temp_min']}'),
+              Text(
+                  'Max. Temp: ${weatherStatus['weather']['main']['temp_max']}'),
+            ],
+          ),
+          Column(
+            children: <Widget>[
+              Text('Pressure: ${weatherStatus['weather']['main']['pressure']}'),
+              Text('Humidity: ${weatherStatus['weather']['main']['humidity']}'),
+              Text('Wind: ${weatherStatus['weather']['wind']['speed']}'),
+            ],
+          )
+        ],
+      )
+    ]);
   }
 
   Widget AlertPincode() {
@@ -338,10 +359,7 @@ class WeatherHomePageState extends State<WeatherHomePage> {
             snapshot.connectionState == ConnectionState.done) {
           weatherStatus = snapshot.data;
           print(weatherStatus);
-          return Center(
-            child: Text(
-                'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
-          );
+          return displayWeather(weatherStatus);
         }
         return Container(
           height: MediaQuery.of(context).size.width * 0.1,
@@ -363,9 +381,9 @@ class WeatherHomePageState extends State<WeatherHomePage> {
         'http://api.openweathermap.org/data/2.5/weather?zip=$pincode,$countryCode&appid=${dataJson["weatherApiKey"]}';
     http.Response res = await http.get(url);
     var weather = json.decode(res.body);
-    print(weather);
     weatherStatus['weather'] = weather;
-    print(weatherStatus);
+    var dateTime = getCurrentTime();
+    weatherStatus['lastUpdated'] = dateTime;
     weatherData.writeFile(weatherStatus);
     return weatherStatus;
   }
@@ -378,12 +396,7 @@ class WeatherHomePageState extends State<WeatherHomePage> {
         if (snapshot.hasData &&
             snapshot.connectionState == ConnectionState.done) {
           weatherStatus = snapshot.data;
-          print(1);
-          print(weatherStatus['weather']);
-          return Center(
-            child: Text(
-                'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
-          );
+          return displayWeather(weatherStatus);
         }
         return Container(
           height: MediaQuery.of(context).size.width * 0.1,
@@ -397,7 +410,6 @@ class WeatherHomePageState extends State<WeatherHomePage> {
   }
 
   Future getWeatherCityName(cityName) async {
-    print(1);
     Map weatherStatus = {};
     var dataString =
         await DefaultAssetBundle.of(context).loadString('assets/data.json');
@@ -407,6 +419,8 @@ class WeatherHomePageState extends State<WeatherHomePage> {
     http.Response res = await http.get(url);
     var weather = json.decode(res.body);
     weatherStatus['weather'] = weather;
+    var dateTime = getCurrentTime();
+    weatherStatus['lastUpdated'] = dateTime;
     weatherData.writeFile(weatherStatus);
     return weatherStatus;
   }
@@ -418,13 +432,15 @@ class WeatherHomePageState extends State<WeatherHomePage> {
       builder: (context, snapshot) {
         if (snapshot.hasData &&
             snapshot.connectionState == ConnectionState.done) {
-          previousWeather = jsonDecode(snapshot.data);
-//          print(previousWeather);
-//          print(previousWeather.runtimeType);
-//          print(previousWeather['weather']);
-          return Center(
-              child: Text(
-                  'Previous Temperature is ${previousWeather['weather']['main']['temp'] - 273}\u1d52C'));
+          var data = snapshot.data;
+          if (data == 'file does not exist') {
+            return Center(
+              child: Text('Click on one of the below button to check weather'),
+            );
+          } else {
+            previousWeather = jsonDecode(snapshot.data);
+            return displayWeather(previousWeather);
+          }
         }
         return Container(
           height: MediaQuery.of(context).size.width * 0.1,
@@ -447,39 +463,7 @@ class WeatherHomePageState extends State<WeatherHomePage> {
           weatherStatus = snapshot.data;
           if (weatherStatus['permissionStatus']) {
             if (weatherStatus['locationStatus']) {
-              return Column(children: <Widget>[
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                      'Last Updated: ${weatherStatus['lastUpdated']['date']}, ${weatherStatus['lastUpdated']['time']}'),
-                ),
-                Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('${weatherStatus['weather']['name']}')),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                      'Current Temperature is ${weatherStatus['weather']['main']['temp'] - 273}\u1d52C'),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    Column(
-                      children: <Widget>[
-                        Text('Min. Temp: ${weatherStatus['weather']['main']['temp_min']}'),
-                        Text('Max. Temp: ${weatherStatus['weather']['main']['temp_max']}'),
-                      ],
-                    ),
-                    Column(
-                      children: <Widget>[
-                        Text('Pressure: ${weatherStatus['weather']['main']['pressure']}'),
-                        Text('Humidity: ${weatherStatus['weather']['main']['humidity']}'),
-                        Text('Wind: ${weatherStatus['weather']['wind']['speed']}'),
-                      ],
-                    )
-                  ],
-                )
-              ]);
+              return displayWeather(weatherStatus);
             } else {
               return Center(child: Text('location is off'));
             }

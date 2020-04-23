@@ -15,9 +15,15 @@ class WeatherData{
   }
 
   Future<String> readFile() async{
+    String contents;
     try{
       final file=await localFile;
-      String contents=await file.readAsString();
+      if (await file.exists()){
+        contents=await file.readAsString();
+      }
+      else{
+        contents='file does not exist';
+      }
       return contents;
     }
     catch (e){
